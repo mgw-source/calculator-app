@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9ede5">
+  <title>Form — Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20241e;
+      --muted: #7d8278;
+      --paper: #f8f9f5;
+      --canvas: #e9ede5;
+      --line: #e8ebe3;
+      --green: #315f46;
+      --green-soft: #e6eee6;
+      --mono: "DM Mono", "Courier New", monospace;
+      --sans: "Manrope", "Trebuchet MS", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--canvas);
+      background-image: radial-gradient(#cdd4ca 0.75px, transparent 0.75px);
+      background-size: 18px 18px;
+      font-family: var(--sans);
+    }
+
+    button { font: inherit; }
+
+    .page {
+      width: min(100% - 40px, 920px);
+      min-height: 100vh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #d5dbd1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-mark {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: #fff;
+      background: var(--green);
+      font-family: var(--mono);
+      font-size: 15px;
+    }
+
+    .top-meta {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #626a5f;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #76a57e;
+      box-shadow: 0 0 0 3px #d9e5d8;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 52px 0 64px;
+    }
+
+    .workspace {
+      width: min(100%, 750px);
+      display: grid;
+      grid-template-columns: minmax(0, 440px) minmax(205px, 1fr);
+      align-items: stretch;
+      overflow: hidden;
+      border: 1px solid #e2e6dd;
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 18px 55px #3b4b3616, 0 3px 9px #3b4b3608;
+      animation: arrive 420ms ease-out both;
+    }
+
+    .calculator { padding: 27px 28px 29px; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 23px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .precision {
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: #677064;
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .display {
+      min-height: 136px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 14px 2px 18px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+    }
+
+    .expression {
+      min-height: 24px;
+      overflow: hidden;
+      color: #848a80;
+      font-family: var(--mono);
+      font-size: 14px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .value {
+      overflow: hidden;
+      margin-top: 7px;
+      font-family: var(--mono);
+      font-size: clamp(38px, 8vw, 51px);
+      line-height: 1.13;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+      padding-top: 17px;
+    }
+
+    .key {
+      min-width: 0;
+      height: 54px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      color: #353b33;
+      background: #f0f2ed;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 17px;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .key:hover { border-color: #dce2d8; background: #e9ede6; }
+    .key:active { transform: translateY(1px) scale(.98); }
+    .key:focus-visible, .clear-history:focus-visible { outline: 2px solid #588468; outline-offset: 2px; }
+    .key.utility { color: #657061; background: #f5f6f2; font-size: 14px; }
+    .key.operator { color: var(--green); background: var(--green-soft); font-size: 20px; }
+    .key.equals { color: #fff; background: var(--green); font-size: 21px; }
+    .key.equals:hover { background: #274f3a; }
+
+    .history {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 21px 20px;
+      border-left: 1px solid var(--line);
+      background: #f3f5f0;
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e3e7df;
+    }
+
+    .history-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .clear-history {
+      padding: 3px 0 3px 4px;
+      border: 0;
+      color: #858a81;
+      background: transparent;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding-top: 8px;
+    }
+
+    .history-entry {
+      width: 100%;
+      display: block;
+      padding: 12px 8px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      text-align: right;
+    }
+
+    .history-entry:hover { background: #e9ede6; }
+    .history-expression { overflow: hidden; color: #858a81; font-family: var(--mono); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .history-result { margin-top: 5px; color: #30372e; font-family: var(--mono); font-size: 14px; }
+
+    .empty-history {
+      margin: 17px 0;
+      color: #92978e;
+      font-size: 11px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .history-foot {
+      margin-top: auto;
+      padding-top: 16px;
+      color: #93988e;
+      font-family: var(--mono);
+      font-size: 9px;
+      line-height: 1.7;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0 22px;
+      color: #767d72;
+      font-family: var(--mono);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 650px) {
+      .page { width: min(100% - 28px, 440px); }
+      .topbar { height: 68px; }
+      main { padding: 27px 0 34px; }
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .calculator { padding: 23px 20px 22px; }
+      .display { min-height: 121px; }
+      .key { height: 56px; }
+      .history { min-height: 130px; padding: 16px 20px 15px; border-top: 1px solid var(--line); border-left: 0; }
+      .history-head { padding-bottom: 12px; }
+      .history-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .history-entry { padding: 8px; }
+      .history-foot { display: none; }
+      .empty-history { margin: 12px 0 3px; }
+      footer { padding-bottom: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">f.</span>form</div>
+      <div class="top-meta"><span class="live-dot" aria-hidden="true"></span> ready to calculate</div>
+    </header>
+
+    <main>
+      <section class="workspace" aria-label="Calculator">
+        <div class="calculator">
+          <div class="section-head">
+            <p class="eyebrow">Basic calculator</p>
+            <span class="precision">DECIMAL / 10</span>
+          </div>
+          <div class="display" aria-live="polite" aria-atomic="true">
+            <div class="expression" id="expression"></div>
+            <div class="value" id="display">0</div>
+          </div>
+          <div class="keys" aria-label="Calculator keys">
+            <button class="key utility" data-action="clear" aria-label="All clear">AC</button>
+            <button class="key utility" data-action="sign" aria-label="Change sign">+/-</button>
+            <button class="key utility" data-action="percent" aria-label="Percent">%</button>
+            <button class="key operator" data-action="operator" data-value="/" aria-label="Divide">/</button>
+            <button class="key" data-action="digit" data-value="7">7</button>
+            <button class="key" data-action="digit" data-value="8">8</button>
+            <button class="key" data-action="digit" data-value="9">9</button>
+            <button class="key operator" data-action="operator" data-value="*" aria-label="Multiply">x</button>
+            <button class="key" data-action="digit" data-value="4">4</button>
+            <button class="key" data-action="digit" data-value="5">5</button>
+            <button class="key" data-action="digit" data-value="6">6</button>
+            <button class="key operator" data-action="operator" data-value="-" aria-label="Subtract">-</button>
+            <button class="key" data-action="digit" data-value="1">1</button>
+            <button class="key" data-action="digit" data-value="2">2</button>
+            <button class="key" data-action="digit" data-value="3">3</button>
+            <button class="key operator" data-action="operator" data-value="+" aria-label="Add">+</button>
+            <button class="key" data-action="digit" data-value="0">0</button>
+            <button class="key" data-action="decimal" aria-label="Decimal point">.</button>
+            <button class="key utility" data-action="backspace" aria-label="Delete last digit">DEL</button>
+            <button class="key equals" data-action="equals" aria-label="Equals">=</button>
+          </div>
+        </div>
+
+        <aside class="history" aria-label="Calculation history">
+          <div class="history-head">
+            <h2 class="history-title">Recent</h2>
+            <button class="clear-history" id="clear-history" type="button">Clear</button>
+          </div>
+          <div class="history-list" id="history-list"></div>
+          <div class="history-foot">ANSWERS, KEPT<br>ON THIS DEVICE</div>
+        </aside>
+      </section>
+    </main>
+
+    <footer><span>FORM / 01</span><span>Simple things, precisely done.</span></footer>
+  </div>
+
+  <script>
+    const display = document.querySelector("#display");
+    const expression = document.querySelector("#expression");
+    const historyList = document.querySelector("#history-list");
+    const operators = { "+": "+", "-": "-", "*": "x", "/": "/" };
+    let current = "0";
+    let stored = null;
+    let pending = null;
+    let replaceCurrent = false;
+    let justCalculated = false;
+    let history = loadHistory();
+
+    function loadHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("form-calculator-history") || "[]");
+        return Array.isArray(saved) ? saved.slice(0, 8) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return "Error";
+      const rounded = Number.parseFloat(value.toPrecision(11));
+      return Object.is(rounded, -0) ? "0" : String(rounded);
+    }
+
+    function updateDisplay() {
+      display.textContent = current;
+      expression.textContent = pending ? `${formatNumber(stored)} ${operators[pending]}` : "";
+    }
+
+    function renderHistory() {
+      historyList.replaceChildren();
+      if (history.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-history";
+        empty.textContent = "Your calculations will appear here.";
+        historyList.append(empty);
+        return;
+      }
+      history.forEach((entry) => {
+        const button = document.createElement("button");
+        button.className = "history-entry";
+        button.type = "button";
+        button.setAttribute("aria-label", `${entry.expression} equals ${entry.result}. Use result`);
+        const equation = document.createElement("div");
+        equation.className = "history-expression";
+        equation.textContent = entry.expression;
+        const answer = document.createElement("div");
+        answer.className = "history-result";
+        answer.textContent = entry.result;
+        button.append(equation, answer);
+        button.addEventListener("click", () => {
+          current = entry.result;
+          stored = null;
+          pending = null;
+          replaceCurrent = true;
+          justCalculated = true;
+          updateDisplay();
+        });
+        historyList.append(button);
+      });
+    }
+
+    function persistHistory() {
+      try {
+        localStorage.setItem("form-calculator-history", JSON.stringify(history));
+      } catch {
+        // The calculator remains usable when storage is unavailable.
+      }
+      renderHistory();
+    }
+
+    function inputDigit(digit) {
+      if (current === "Error" || replaceCurrent || (justCalculated && !pending)) {
+        current = digit;
+        replaceCurrent = false;
+        justCalculated = false;
+      } else if (current.replace("-", "").length < 15) {
+        current = current === "0" ? digit : current + digit;
+      }
+      updateDisplay();
+    }
+
+    function calculate(left, operator, right) {
+      if (operator === "+") return left + right;
+      if (operator === "-") return left - right;
+      if (operator === "*") return left * right;
+      if (operator === "/") return right === 0 ? NaN : left / right;
+      return right;
+    }
+
+    function chooseOperator(operator) {
+      if (current === "Error") return;
+      const value = Number(current);
+      if (pending && !replaceCurrent) {
+        const result = calculate(stored, pending, value);
+        current = formatNumber(result);
+        stored = Number(current);
+      } else {
+        stored = value;
+      }
+      pending = operator;
+      replaceCurrent = true;
+      justCalculated = false;
+      updateDisplay();
+    }
+
+    function equals() {
+      if (!pending || current === "Error" || replaceCurrent) return;
+      const left = stored;
+      const right = Number(current);
+      const operator = pending;
+      const result = formatNumber(calculate(left, operator, right));
+      const equation = `${formatNumber(left)} ${operators[operator]} ${formatNumber(right)}`;
+      current = result;
+      stored = null;
+      pending = null;
+      replaceCurrent = true;
+      justCalculated = true;
+      expression.textContent = `${equation} =`;
+      if (result !== "Error") {
+        history.unshift({ expression: equation, result });
+        history = history.slice(0, 8);
+        persistHistory();
+      }
+      updateDisplay();
+      expression.textContent = `${equation} =`;
+    }
+
+    function clear() {
+      current = "0";
+      stored = null;
+      pending = null;
+      replaceCurrent = false;
+      justCalculated = false;
+      updateDisplay();
+    }
+
+    function handleAction(action, value) {
+      if (action === "digit") inputDigit(value);
+      if (action === "operator") chooseOperator(value);
+      if (action === "equals") equals();
+      if (action === "clear") clear();
+      if (action === "decimal") {
+        if (current === "Error" || replaceCurrent || justCalculated) {
+          current = "0.";
+          replaceCurrent = false;
+          justCalculated = false;
+        } else if (!current.includes(".")) current += ".";
+        updateDisplay();
+      }
+      if (action === "sign" && current !== "Error" && Number(current) !== 0) {
+        current = formatNumber(-Number(current));
+        updateDisplay();
+      }
+      if (action === "percent" && current !== "Error") {
+        current = formatNumber(Number(current) / 100);
+        replaceCurrent = false;
+        updateDisplay();
+      }
+      if (action === "backspace" && current !== "Error" && !replaceCurrent) {
+        current = current.length > 1 ? current.slice(0, -1) : "0";
+        if (current === "-") current = "0";
+        updateDisplay();
+      }
+    }
+
+    document.querySelector(".keys").addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (button) handleAction(button.dataset.action, button.dataset.value);
+    });
+
+    document.querySelector("#clear-history").addEventListener("click", () => {
+      history = [];
+      persistHistory();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (/^[0-9]$/.test(event.key)) inputDigit(event.key);
+      else if (["+", "-", "*", "/"].includes(event.key)) chooseOperator(event.key);
+      else if (event.key === "Enter" || event.key === "=") equals();
+      else if (event.key === ".") handleAction("decimal");
+      else if (event.key === "Backspace") handleAction("backspace");
+      else if (event.key === "Escape") clear();
+      else return;
+      event.preventDefault();
+    });
+
+    updateDisplay();
+    renderHistory();
+  </script>
+</body>
+</html>
